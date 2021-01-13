@@ -23,11 +23,13 @@
     </LinearLayout>
 
     <Button
-        android:layout_width="match_parent"
+        android:id="@+id/btn_on_off"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_marginTop="30dp"
-        android:padding="15dp"
+        android:background="@drawable/button_bg"
+        android:padding="20dp"
         android:text="자동환기 끄기/켜기 "
         android:textSize="20sp"
         android:textStyle="bold" />

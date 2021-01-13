@@ -16,9 +16,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".StrollActivity"/>
-        <activity android:name=".WeatherActivity"/>
-        <activity android:name=".WindowActivity"/>
+        <activity android:name=".StrollActivity" />
+        <activity android:name=".WeatherActivity" />
+        <activity android:name=".WindowActivity" />
+
+        <receiver android:name=".AlarmReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 
