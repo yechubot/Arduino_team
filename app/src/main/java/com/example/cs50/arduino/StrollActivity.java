@@ -19,23 +19,19 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 
 public class StrollActivity extends AppCompatActivity {
     //log tag
     private static final String TAG = "stroll";
-
     String chID = "stroll";
+
     //ui
     Button btn_save;
     TimePicker timePicker;
     int hour, min;
     TextView stroll_time;
-    String am_pm;
 
     //db
     MyHelper helper;
@@ -51,6 +47,7 @@ public class StrollActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.stroll_notify);
 
@@ -65,6 +62,7 @@ public class StrollActivity extends AppCompatActivity {
         //변수 연결
         btn_save = findViewById(R.id.btn_save);
         stroll_time = findViewById(R.id.stroll_time);
+        stroll_time.setText("산책알림 설정 시간 : 설정 안됨");
 
         //db에 알림 시간 설정한거 있으면 읽어오기
         db = helper.getReadableDatabase();
@@ -81,8 +79,7 @@ public class StrollActivity extends AppCompatActivity {
         while (cursor.moveToNext()) {
             count = cursor.getCount();
             set_time = cursor.getString(0);
-            if (count == 0) stroll_time.setText("산책알림 설정 시간 : 설정 안됨");
-            else stroll_time.setText("산책알림 설정 시간 : " + set_time);
+            if (count > 0) stroll_time.setText("산책알림 설정 시간 : " + set_time);
         }
         //시간 가져오기
         timePicker = findViewById(R.id.time_picker);
@@ -94,39 +91,43 @@ public class StrollActivity extends AppCompatActivity {
                 hour = timePicker.getCurrentHour();
                 min = timePicker.getCurrentMinute();
                 String time24 = hour + " 시 " + min + " 분";
+                //알림 설정 메소드
+                setAlarm();
 
                 //db에 시간 넣음
                 db = helper.getWritableDatabase();
                 ContentValues values = new ContentValues();
                 values.put(StrollDB.StrollEntry.COL_NAME_NOTIFICATION_TIME, time24);
                 db.insert(StrollDB.StrollEntry.TBL_NAME, null, values);
-                //알림 메소드 호출
-                setAlarm(hour, min);
-
                 Toast.makeText(getApplicationContext(), "산책 알림이 " + time24 + " 에 설정되었습니다. ", Toast.LENGTH_SHORT).show();
                 stroll_time.setText("산책알림 설정 시간 : " + time24);
             }
         });
     }
 
-    private void setAlarm(int hour, int min) {
-        Intent rIntent = new Intent(StrollActivity.this, AlarmReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(StrollActivity.this, 0, rIntent, 0);
-        String from = hour +":"+min;
-        Log.d(TAG, "setAlarm: "+from);
-        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm");
-        Date datetime = null;
+    private void setAlarm() {
+        Intent rIntent = new Intent(getApplicationContext(), AlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, rIntent, 0);
+        Calendar cal = Calendar.getInstance();
 
-        try {
-            datetime = dateFormat.parse(from);
-        } catch (ParseException e) {
-            e.printStackTrace();
+        cal.set(Calendar.HOUR_OF_DAY,timePicker.getCurrentHour());
+        cal.set(Calendar.MINUTE,timePicker.getCurrentMinute());
+        cal.set(Calendar.SECOND,0);
+        cal.set(Calendar.MILLISECOND,0);
+
+        Log.d(TAG, "cal: "+cal.getTime());
+        long aTime = System.currentTimeMillis();
+        long bTime = cal.getTimeInMillis();
+
+        //하루 시간
+        long interval = 1000*60*60*24;
+
+        //설정시간이 현재보다 작으면 다음날 울림
+        while(aTime>bTime){
+            bTime+=interval;
         }
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(datetime);
-
-        //해당시간에 매일 알림
-        alarmManager.setRepeating(AlarmManager.RTC, calendar.getTimeInMillis(),AlarmManager.INTERVAL_DAY,pendingIntent);
+        //매일 반복
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,bTime, interval, pendingIntent);
 
     }
 
@@ -135,4 +136,5 @@ public class StrollActivity extends AppCompatActivity {
         super.onDestroy();
         helper.close();
     }
+
 }

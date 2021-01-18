@@ -1,6 +1,5 @@
 package com.example.cs50.arduino;
 
-import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -17,8 +16,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     private static final String TAG = "Alarm";
 
-    public AlarmReceiver() {
-    };
+    public AlarmReceiver() {};
 
     NotificationManager manager;
     NotificationCompat.Builder builder;
@@ -30,7 +28,6 @@ public class AlarmReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "onReceive: " + "알람");
-        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         builder = null;
         manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         //채널
