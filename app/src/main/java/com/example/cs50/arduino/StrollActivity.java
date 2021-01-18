@@ -28,7 +28,7 @@ public class StrollActivity extends AppCompatActivity {
     String chID = "stroll";
 
     //ui
-    Button btn_save;
+    Button btn_save,off;
     TimePicker timePicker;
     int hour, min;
     TextView stroll_time;
@@ -62,6 +62,7 @@ public class StrollActivity extends AppCompatActivity {
         //변수 연결
         btn_save = findViewById(R.id.btn_save);
         stroll_time = findViewById(R.id.stroll_time);
+        off = findViewById(R.id.off);
         stroll_time.setText("산책알림 설정 시간 : 설정 안됨");
 
         //db에 알림 시간 설정한거 있으면 읽어오기
@@ -103,32 +104,47 @@ public class StrollActivity extends AppCompatActivity {
                 stroll_time.setText("산책알림 설정 시간 : " + time24);
             }
         });
+
+        off.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getApplicationContext(), "반복알림을 끕니다.", Toast.LENGTH_SHORT).show();
+                //offAlarm();
+
+            }
+        });
     }
+
+//    private void offAlarm() {
+//        alarmManager = (AlarmManager) getApplicationContext().getSystemService(ALARM_SERVICE);
+//        Intent intent = new Intent(getApplicationContext(),MainActivity.class);
+//        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, 0);
+//        alarmManager.cancel(pendingIntent);
+//    }
 
     private void setAlarm() {
         Intent rIntent = new Intent(getApplicationContext(), AlarmReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, rIntent, 0);
         Calendar cal = Calendar.getInstance();
 
-        cal.set(Calendar.HOUR_OF_DAY,timePicker.getCurrentHour());
-        cal.set(Calendar.MINUTE,timePicker.getCurrentMinute());
-        cal.set(Calendar.SECOND,0);
-        cal.set(Calendar.MILLISECOND,0);
+        cal.set(Calendar.HOUR_OF_DAY, timePicker.getCurrentHour());
+        cal.set(Calendar.MINUTE, timePicker.getCurrentMinute());
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
 
-        Log.d(TAG, "cal: "+cal.getTime());
+        Log.d(TAG, "cal: " + cal.getTime());
         long aTime = System.currentTimeMillis();
         long bTime = cal.getTimeInMillis();
 
         //하루 시간
-        long interval = 1000*60*60*24;
+        long interval = 1000 * 60 * 60 * 24;
 
         //설정시간이 현재보다 작으면 다음날 울림
-        while(aTime>bTime){
-            bTime+=interval;
+        while (aTime > bTime) {
+            bTime += interval;
         }
         //매일 반복
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,bTime, interval, pendingIntent);
-
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, bTime, interval, pendingIntent);
     }
 
     @Override
