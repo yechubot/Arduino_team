@@ -21,8 +21,8 @@ public class AlarmReceiver extends BroadcastReceiver {
     NotificationManager manager;
     NotificationCompat.Builder builder;
 
-    private static String CH_ID = "channel1";
-    private static String CH_NAME = "channel1";
+    private static String CH_ID = "channel3";
+    private static String CH_NAME = "channel3";
 
 
     @Override

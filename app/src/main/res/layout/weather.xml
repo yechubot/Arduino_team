@@ -42,10 +42,29 @@
     </LinearLayout>
 
     <LinearLayout
-        android:layout_width="250dp"
-        android:layout_height="250dp"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
         android:layout_gravity="center"
-        android:background="@drawable/stroll_circle">
+        android:gravity="center"
+        android:background="@drawable/stroll_circle"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/flame"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:text="불꽃"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/drop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:text="물방울"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 

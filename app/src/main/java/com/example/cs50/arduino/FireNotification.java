@@ -26,9 +26,11 @@ public class FireNotification extends AppCompatActivity {
             public void onClick(View view) {
                 sms.sendTextMessage(callNum, null, "불났어요", null, null);
                 //AutoPermission을 main에 넣어서 성공함.
-                /*Uri uri = Uri.parse("tel:"+edt_number.getText().toString());
-                Intent intent = new Intent(Intent.ACTION_CALL, uri);
-                startActivity(intent);*/
+//                Uri uri = Uri.parse("tel:"+edt_number.getText().toString());
+//                Intent intent = new Intent(Intent.ACTION_CALL, uri);
+//                startActivity(intent);
+
+
 //                if(ActivityCompat.checkSelfPermission(FireNotification.this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED){
 //
 //                }else{
