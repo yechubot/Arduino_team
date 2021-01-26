@@ -2,13 +2,24 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FBFAF4"
     android:orientation="vertical">
 
-    <LinearLayout
-        android:layout_width="350dp"
-        android:layout_height="350dp"
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="15dp"
+        android:text="창문 환기 설정"
+        android:textColor="#EDB867"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="15dp"
         android:background="@drawable/window_circle"
         android:gravity="center">
 
@@ -16,7 +27,7 @@
             android:id="@+id/text_windowStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="10dp"
+            android:padding="5dp"
             android:text="창문이 열려있습니다."
             android:textSize="25sp"
             android:textStyle="bold" />
@@ -30,9 +41,45 @@
         android:layout_gravity="center"
         android:layout_marginTop="30dp"
         android:background="@drawable/button_bg"
-        android:padding="20dp"
+        android:padding="15dp"
         android:textOff="자동 환기 꺼짐"
         android:textOn="자동 환기 켜짐"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:textSize="22sp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="15dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10dp"
+            android:text="자동기능 꺼짐"
+            android:textColor="#A5A5A5"
+            android:textSize="20dp"
+            android:textStyle="bold" />
+
+
+        <Switch
+            android:id="@+id/sw_off"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:checked="true"
+            android:thumb="@drawable/thumb"
+            android:track="@drawable/switch_track" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="자동기능 켜짐"
+            android:textColor="#FF9900"
+            android:textSize="20dp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
 </LinearLayout>

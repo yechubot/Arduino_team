@@ -29,22 +29,12 @@ import java.util.GregorianCalendar;
 public class StrollActivity extends AppCompatActivity {
     //log tag
     private static final String TAG = "stroll";
-    String chID = "stroll";
 
     //ui
     Button btn_save,off;
     TimePicker timePicker;
     int hour, min;
     TextView stroll_time;
-
-    //db
-/*
-    MyHelper helper;
-    SQLiteDatabase db;
-    Cursor cursor;
-    int count;
-    String set_time;
-*/
 
     //firebase
     FirebaseDatabase mDatabase;
@@ -65,9 +55,6 @@ public class StrollActivity extends AppCompatActivity {
         mDatabase = FirebaseDatabase.getInstance();
         mReference = mDatabase.getReference("strollTime");
 
-        //db
-      //  helper = new MyHelper(getApplicationContext());
-
         //notification set up
         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -80,7 +67,6 @@ public class StrollActivity extends AppCompatActivity {
         stroll_time.setText("산책알림 설정 시간 : 설정 안됨");
 
         //firebase에서 읽어오기
-
         ValueEventListener timeListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -95,23 +81,6 @@ public class StrollActivity extends AppCompatActivity {
         };
         mReference.addValueEventListener(timeListener);
 
-        //db에 알림 시간 설정한거 있으면 읽어오기
-/*        db = helper.getReadableDatabase();
-        String[] projection = {StrollDB.StrollEntry.COL_NAME_NOTIFICATION_TIME};
-        cursor = db.query(
-                StrollDB.StrollEntry.TBL_NAME,
-                projection,
-                null,
-                null,
-                null,
-                null,
-                null);
-
-        while (cursor.moveToNext()) {
-            count = cursor.getCount();
-            set_time = cursor.getString(0);
-            if (count > 0) stroll_time.setText("산책알림 설정 시간 : " + set_time);
-        }*/
         //시간 가져오기
         timePicker = findViewById(R.id.time_picker);
         timePicker.setIs24HourView(true); //24시간제
@@ -124,30 +93,15 @@ public class StrollActivity extends AppCompatActivity {
                 String time24 = hour + " 시 " + min + " 분";
                 //알림 설정 메소드
                 setAlarm();
+
                 //firebase db에 넣기
                 writeTime(time24);
 
-
-                //db에 시간 넣음
-/*                db = helper.getWritableDatabase();
-                ContentValues values = new ContentValues();
-                values.put(StrollDB.StrollEntry.COL_NAME_NOTIFICATION_TIME, time24);
-                db.insert(StrollDB.StrollEntry.TBL_NAME, null, values);
-
-              */
                 Toast.makeText(getApplicationContext(), "산책 알림이 " + time24 + " 에 설정되었습니다. ", Toast.LENGTH_SHORT).show();
                 stroll_time.setText("산책알림 설정 시간 : " + time24);
             }
         });
 
-/*        off.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), "반복알림을 끕니다.", Toast.LENGTH_SHORT).show();
-                //offAlarm();
-
-            }
-        });*/
     }
 
     //firebase db에 시간 넣기
@@ -156,12 +110,6 @@ public class StrollActivity extends AppCompatActivity {
         Log.d(TAG, "firebase db write time : "+ time );
 
     }
-/*    private void offAlarm() {
-        alarmManager = (AlarmManager) getApplicationContext().getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(getApplicationContext(),MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, 0);
-        alarmManager.cancel(pendingIntent);
-    }*/
 
     private void setAlarm() {//타임피커에서 정한대로 알람 설정함
         Intent rIntent = new Intent(getApplicationContext(), AlarmReceiver.class);
@@ -188,10 +136,5 @@ public class StrollActivity extends AppCompatActivity {
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, bTime, interval, pendingIntent);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-       // helper.close();
-    }
 
 }

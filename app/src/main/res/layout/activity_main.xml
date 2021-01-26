@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/sky_grass"
     android:orientation="vertical"
     tools:context=".MainActivity">
 
@@ -12,7 +13,7 @@
         android:layout_width="320dp"
         android:layout_height="320dp"
         android:layout_gravity="center"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="10dp"
         android:background="@drawable/weather_circle"
         android:gravity="center"
         android:orientation="vertical">
@@ -22,29 +23,36 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="2021년 1월 1일"
+            android:text="날짜 읽는중"
             android:textSize="20sp" />
 
-        <TextView
+        <ImageView
             android:id="@+id/loc"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:src="@drawable/location" />
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:text="위치를 읽는중"
-            android:textSize="30sp"
-            android:textStyle="bold" />
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text="현재 위치의 날씨"
+            android:textSize="20sp" />
+
 
         <ImageView
             android:id="@+id/weather_icon"
             android:layout_width="wrap_content"
             android:layout_height="70dp"
-            android:layout_marginTop="10dp" />
+            android:layout_marginTop="10dp"
+            android:src="@drawable/loading" />
 
         <TextView
             android:id="@+id/des"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="3dp"
             android:text="날씨를 읽는중"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -62,7 +70,8 @@
             android:layout_height="150dp"
             android:layout_marginRight="40dp"
             android:background="@drawable/stroll_circle"
-            android:gravity="center">
+            android:gravity="center"
+            android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -72,6 +81,11 @@
                 android:text="산책 설정"
                 android:textSize="22sp"
                 android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/footprint" />
         </LinearLayout>
 
         <LinearLayout
@@ -85,11 +99,16 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
                 android:gravity="center"
                 android:text="환기 설정"
                 android:textSize="22sp"
                 android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/wind" />
+
         </LinearLayout>
     </LinearLayout>
 
@@ -103,11 +122,10 @@
 
         <ImageView
             android:id="@+id/iv_fire"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
             android:layout_marginRight="5dp"
-            android:src="@drawable/ic_fire"
-            app:tint="#FF901A" />
+            android:src="@drawable/flame" />
 
         <TextView
             android:id="@+id/fire_status"
@@ -115,6 +133,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="화재감지 센서 상태: 연결되지 않음"
+            android:textColor="#fff"
             android:textSize="18sp" />
     </LinearLayout>
 </LinearLayout>

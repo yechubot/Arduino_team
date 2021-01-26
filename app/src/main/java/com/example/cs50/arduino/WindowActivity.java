@@ -5,15 +5,20 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +31,8 @@ import java.util.UUID;
 public class WindowActivity extends AppCompatActivity implements View.OnClickListener {
     //ui
     ToggleButton on_off;
+    TextView text_windowStatus;
+    Switch sw_off;
 
     //bluetooth
     BluetoothAdapter bluetoothAdapter;
@@ -38,24 +45,55 @@ public class WindowActivity extends AppCompatActivity implements View.OnClickLis
     InputStream inputStream = null;
     Thread workerThread = null;
     String strDelimiter = "\n"; // 문자열 끝
-    char charDelimiter = '\n';
+    char charDelimiter = '/';
     byte[] readBuffer;
     int readBufferPosition;
 
-    //motor info?
-    String str;
+    //motor 각도 송신 값
+    String str="0";
+    int flame;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.window_adjust);
         on_off = findViewById(R.id.btn_on_off);
+        text_windowStatus=findViewById(R.id.text_windowStatus);
+        sw_off=(Switch)findViewById(R.id.sw_off);
+        //자동기능끄기 에 대한 기능
+        sendData("9");
+        sw_off.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b==false){//자동기능끄기
+                    on_off.setEnabled(true);
+                    on_off.setBackground(ContextCompat.getDrawable(getApplicationContext(),R.drawable.button_bg));
+                    sendData("8");
+                }else{
+                    on_off.setEnabled(false);
+                    on_off.setBackground(ContextCompat.getDrawable(getApplicationContext(),R.drawable.button_bg_off));
+                    sendData("9");
+                }
+            }
+        });
 
         //블루투스 바로 연결
         checkBluetooth();
 
         //버튼 클릭시 리스너 -> 맨 아래 정의되어 있음
         on_off.setOnClickListener(this);
+
+        //화재감지 시 자동 문열림 & 사이렌발생
+        if(flame>300){
+            if(str=="0"){
+                str="1";
+                text_windowStatus.setText("창문이 열려있습니다.");
+                sendData(str);
+            }
+            MediaPlayer player=MediaPlayer.create(this, R.raw.siren);
+            player.start();
+        }
+        //테스트 해볼 것: 문이 열려있는 상태일 경우 에러나는지.
     }
 
     void checkBluetooth() {
@@ -87,7 +125,7 @@ public class WindowActivity extends AppCompatActivity implements View.OnClickLis
         } else {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("블루투스 장치 선택")
-            .setIcon(R.drawable.bluetooth);
+                    .setIcon(R.drawable.bluetooth);
 
             //동적 배열
             List<String> listItems = new ArrayList<>();
@@ -159,9 +197,13 @@ public class WindowActivity extends AppCompatActivity implements View.OnClickLis
                                     readBufferPosition = 0;
                                     handler.post(new Runnable() {
                                         @Override
-                                        public void run() { // 이 부분만 달라지게..?
-                                            //수신된 문자열 데이터에 대한 처리 작업
-
+                                        public void run() {
+                                            //불꽃센서값 수신. 값이 300 이상일 경우, sendData(문열림)
+                                            if(data.contains("flame")){
+                                                String f = data;
+                                                String f2 =  f.substring(5);
+                                                flame=Integer.parseInt(f2);
+                                            }
                                         }
                                     });
                                 } else {
@@ -237,6 +279,16 @@ public class WindowActivity extends AppCompatActivity implements View.OnClickLis
     @Override
     public void onClick(View v) {
         //진짜 데이터 보내는 거
+        if(str=="0"){
+            str="1";
+            text_windowStatus.setText("창문이 열려있습니다.");
+            showToast(str);
+
+        }else if(str=="1"){
+            str="0";
+            text_windowStatus.setText("창문이 닫혀있습니다.");
+            showToast(str);
+        }
         sendData(str);
     }
 
@@ -245,5 +297,4 @@ public class WindowActivity extends AppCompatActivity implements View.OnClickLis
     }
 
 }
-
 
