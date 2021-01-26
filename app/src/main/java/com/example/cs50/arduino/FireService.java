@@ -68,7 +68,7 @@ public class FireService extends Service {
         } else {
             builder = new NotificationCompat.Builder(this);
         }
-        builder.setSmallIcon(R.drawable.ic_fire)
+        builder.setSmallIcon(R.drawable.flame)
                 .setTicker("화재감지경보")
                 .setContentTitle("화재감지경보")
                 .setContentText("화재가 감지되어 자동으로 창문열기 실행됨")
