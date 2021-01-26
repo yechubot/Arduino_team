@@ -105,14 +105,14 @@ public class StrollActivity extends AppCompatActivity {
             }
         });
 
-        off.setOnClickListener(new View.OnClickListener() {
+/*        off.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Toast.makeText(getApplicationContext(), "반복알림을 끕니다.", Toast.LENGTH_SHORT).show();
                 //offAlarm();
 
             }
-        });
+        });*/
     }
 
 //    private void offAlarm() {
