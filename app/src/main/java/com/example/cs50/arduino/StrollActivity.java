@@ -3,11 +3,8 @@ package com.example.cs50.arduino;
 import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,8 +13,15 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -34,11 +38,17 @@ public class StrollActivity extends AppCompatActivity {
     TextView stroll_time;
 
     //db
+/*
     MyHelper helper;
     SQLiteDatabase db;
     Cursor cursor;
     int count;
     String set_time;
+*/
+
+    //firebase
+    FirebaseDatabase mDatabase;
+    DatabaseReference mReference;
 
     //noti
     NotificationManager notificationManager;
@@ -51,8 +61,12 @@ public class StrollActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.stroll_notify);
 
+
+        mDatabase = FirebaseDatabase.getInstance();
+        mReference = mDatabase.getReference("strollTime");
+
         //db
-        helper = new MyHelper(getApplicationContext());
+      //  helper = new MyHelper(getApplicationContext());
 
         //notification set up
         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -65,8 +79,24 @@ public class StrollActivity extends AppCompatActivity {
         off = findViewById(R.id.off);
         stroll_time.setText("산책알림 설정 시간 : 설정 안됨");
 
+        //firebase에서 읽어오기
+
+        ValueEventListener timeListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+               String value = dataSnapshot.getValue(String.class);
+               stroll_time.setText("산책알림 설정 시간 : "+value);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "onCancelled: ",databaseError.toException() );
+            }
+        };
+        mReference.addValueEventListener(timeListener);
+
         //db에 알림 시간 설정한거 있으면 읽어오기
-        db = helper.getReadableDatabase();
+/*        db = helper.getReadableDatabase();
         String[] projection = {StrollDB.StrollEntry.COL_NAME_NOTIFICATION_TIME};
         cursor = db.query(
                 StrollDB.StrollEntry.TBL_NAME,
@@ -81,7 +111,7 @@ public class StrollActivity extends AppCompatActivity {
             count = cursor.getCount();
             set_time = cursor.getString(0);
             if (count > 0) stroll_time.setText("산책알림 설정 시간 : " + set_time);
-        }
+        }*/
         //시간 가져오기
         timePicker = findViewById(R.id.time_picker);
         timePicker.setIs24HourView(true); //24시간제
@@ -94,12 +124,17 @@ public class StrollActivity extends AppCompatActivity {
                 String time24 = hour + " 시 " + min + " 분";
                 //알림 설정 메소드
                 setAlarm();
+                //firebase db에 넣기
+                writeTime(time24);
+
 
                 //db에 시간 넣음
-                db = helper.getWritableDatabase();
+/*                db = helper.getWritableDatabase();
                 ContentValues values = new ContentValues();
                 values.put(StrollDB.StrollEntry.COL_NAME_NOTIFICATION_TIME, time24);
                 db.insert(StrollDB.StrollEntry.TBL_NAME, null, values);
+
+              */
                 Toast.makeText(getApplicationContext(), "산책 알림이 " + time24 + " 에 설정되었습니다. ", Toast.LENGTH_SHORT).show();
                 stroll_time.setText("산책알림 설정 시간 : " + time24);
             }
@@ -115,14 +150,20 @@ public class StrollActivity extends AppCompatActivity {
         });*/
     }
 
-//    private void offAlarm() {
-//        alarmManager = (AlarmManager) getApplicationContext().getSystemService(ALARM_SERVICE);
-//        Intent intent = new Intent(getApplicationContext(),MainActivity.class);
-//        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, 0);
-//        alarmManager.cancel(pendingIntent);
-//    }
+    //firebase db에 시간 넣기
+    private void writeTime(String time){
+        mReference.setValue(time);
+        Log.d(TAG, "firebase db write time : "+ time );
 
-    private void setAlarm() {
+    }
+/*    private void offAlarm() {
+        alarmManager = (AlarmManager) getApplicationContext().getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(getApplicationContext(),MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, 0);
+        alarmManager.cancel(pendingIntent);
+    }*/
+
+    private void setAlarm() {//타임피커에서 정한대로 알람 설정함
         Intent rIntent = new Intent(getApplicationContext(), AlarmReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, rIntent, 0);
         Calendar cal = Calendar.getInstance();
@@ -150,7 +191,7 @@ public class StrollActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        helper.close();
+       // helper.close();
     }
 
 }
