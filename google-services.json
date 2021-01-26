@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "114513473519",
+    "project_id": "arduino-e4550",
+    "storage_bucket": "arduino-e4550.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:114513473519:android:fb4519a2a6c42decfd901a",
+        "android_client_info": {
+          "package_name": "com.example.cs50.arduino"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "114513473519-8mc1d55hhtqrjlpr4asdebopgcr3blgo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cs50.arduino",
+            "certificate_hash": "bf947422eedadcb1f2b8bb9993cf52f18ef46d71"
+          }
+        },
+        {
+          "client_id": "114513473519-r81jb12hc89hr3urplp10g7ups6bto9j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkIwXsrM1BWJIPMDqeqr_hAXagdykqifw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "114513473519-r81jb12hc89hr3urplp10g7ups6bto9j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
