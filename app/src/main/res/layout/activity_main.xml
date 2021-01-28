@@ -25,6 +25,11 @@
             android:gravity="center"
             android:text="날짜 읽는중"
             android:textSize="20sp" />
+                <Button
+                    android:id="@+id/test"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="test"/>
 
         <ImageView
             android:id="@+id/loc"
@@ -88,15 +93,18 @@
                 android:src="@drawable/footprint" />
         </LinearLayout>
 
+
         <LinearLayout
             android:id="@+id/window"
             android:layout_width="150dp"
             android:layout_height="150dp"
-            android:background="@drawable/window_circle"
+            android:background="@drawable/disabled"
+            android:clickable="false"
             android:gravity="center"
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/windowText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
@@ -110,7 +118,23 @@
                 android:src="@drawable/wind" />
 
         </LinearLayout>
+
     </LinearLayout>
+
+    <Switch
+        android:id="@+id/sw_off"
+        android:layout_width="133dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="5dp"
+        android:checked="true"
+        android:text="자동 환기"
+        android:textColor="#505050"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:thumb="@drawable/thumb"
+        android:track="@drawable/switch_track" />
+
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -136,4 +160,5 @@
             android:textColor="#fff"
             android:textSize="18sp" />
     </LinearLayout>
+
 </LinearLayout>

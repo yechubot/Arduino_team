@@ -1,23 +1,30 @@
 package com.example.cs50.arduino;
 
-import android.annotation.SuppressLint;
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +32,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -33,8 +42,12 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Transaction;
 import com.pedro.library.AutoPermissions;
 import com.pedro.library.AutoPermissionsListener;
 
@@ -48,37 +61,43 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements AutoPermissionsListener {
+public class MainActivity extends AppCompatActivity implements AutoPermissionsListener, View.OnClickListener {
 
     private static final String TAG = "main";
     //ui
     LinearLayout weather, stroll, window;
     String date_time;
     TextView today_date_time;
-    TextView des;
+    TextView des, windowText;
     ImageView loc;
     ImageView weather_icon;
+    Switch sw_off;
+    Button test;
 
-    //화재감지 전화테스트
+    String strDelimiter = "\n"; // 문자열 끝
+    String str = "0";
+
+    //화재감지 전화
     TextView fire_status;
 
     //location
     LocationManager locManager;
+    Location location;
     boolean isGPSEnabled = false;
     boolean isNetworkEnabled = false;
     boolean isGetLoc = false;
-    Location location;
     double lat;
     double lon;
 
     //최소 gps 정보 업뎃 거리 1000 미터
     private static final long MIN_DISTANCE_TO_UPDATE = 1000;
     //최소 업뎃 시간 1분
-    private static final long MIN_TIME_TO_UPDATE = 1000 * 60 * 1;
+    private static final long MIN_TIME_TO_UPDATE = 1000 * 60;
 
     //firebase
     FirebaseDatabase mDatabase;
@@ -101,26 +120,71 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
     Thread workerThread = null;
     char charDelimiter = '/'; // 아두이노에서 끝에 날라옴
 
-
     byte[] readBuffer;
     int readBufferPosition;
 
     String flameVal, waterVal, temperatureVal, humidityVal, sunlightVal;
+    String stroll_in_date = "", stroll_out_date = "";
+    int strollCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //퍼미션을 모두 체크해준다
+        //퍼미션을 모두 체크
         AutoPermissions.Companion.loadAllPermissions(this, 101);
 
+        //오늘 날짜
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy년 MM월 dd일");
         date_time = simpleDateFormat.format(calendar.getTime());
+
         //원 3개
         weather = findViewById(R.id.weather);
         stroll = findViewById(R.id.stroll);
         window = findViewById(R.id.window);
+
+        //테스트
+        test = findViewById(R.id.test);
+        //맨 처음 counts 노드는 있어야 한다. db에서 안지우면 되긴 하는데 ..
+        test.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                strollCount++;
+                getCounts(mDatabase.getReference("stroll_in_out").child("stroll"));
+
+                //앱 종료후 값이 초기화됨
+              // connectFirebase("stroll_in_out", "stroll", String.valueOf(strollCount));
+
+            }
+        });
+
+        //처음에 자동환기스위치 켜져있으니까 회색에다가 클릭 안됨
+        window.setEnabled(false);
+
+        //스위치
+        sw_off = findViewById(R.id.sw_off);
+        windowText = findViewById(R.id.windowText);
+
+        //앱 켜자마자 전송
+        sendData("9");
+
+        sw_off.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                Drawable drawable = ContextCompat.getDrawable(getApplicationContext(), R.drawable.window_circle);
+                Drawable drawable1 = ContextCompat.getDrawable(getApplicationContext(), R.drawable.disabled);
+                if (b == false) {//자동기능끄기
+                    window.setEnabled(true);
+                    window.setBackground(drawable);
+                    sendData("8");
+                } else {
+                    window.setEnabled(false);
+                    window.setBackground(drawable1);
+                    sendData("9");
+                }
+            }
+        });
 
         //화재감지 연결
         iv_fire = (ImageView) findViewById(R.id.iv_fire);
@@ -141,6 +205,7 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
         //현재 날짜
         today_date_time.setText(date_time);
 
+        //날씨 동그라미 클릭
         weather.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -148,6 +213,8 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
                 startActivity(intent);
             }
         });
+
+        //산책 동그라미 클릭
         stroll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -155,24 +222,35 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
                 startActivity(intent);
             }
         });
-        window.setOnClickListener(new View.OnClickListener() {
+
+        //새 액티비티 안뜸
+        /*window.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(getApplicationContext(), WindowActivity.class);
                 startActivity(intent);
             }
-        });
+        });*/
+        // 창 리스너 설정 -> 맨 밑에 코드 있음
+        window.setOnClickListener(this);
 
+        //화재감지 아이콘 클릭
         iv_fire.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //sendOnChannel1(v);
                 fire_status.setTextColor(Color.RED);
                 fire_status.setText("화재감지됨!!(여기를 눌러 종료)");
-                iv_fire.setColorFilter(Color.RED);
+
                 //화재 notification 날림
-                Intent intent=new Intent(getApplicationContext(), FireService.class);
-                startService(intent);
+                Intent intent = new Intent(getApplicationContext(), FireService.class);
+
+                if (Build.VERSION.SDK_INT >= 26) { //oreo이상은 startForegroundService로 호출
+                    startForegroundService(intent);
+                } else {
+                    startService(intent);
+                }
+
                 //보호자에게 화재 알림 SMS 날림
                 sms = SmsManager.getDefault();
                 sms.sendTextMessage(callNum, null, "이젠실버타운 105호 화재 감지되었습니다!!", null, null);
@@ -181,16 +259,36 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
         fire_status.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                fire_status.setTextColor(Color.parseColor("#808080"));
+                fire_status.setTextColor(Color.parseColor("#ffffff"));
                 fire_status.setText("화재감지 센서 상태: 연결되지 않음");
-                iv_fire.setColorFilter(Color.parseColor("#808080"));
-                Intent intent=new Intent(getApplicationContext(), FireService.class);
+                Intent intent = new Intent(getApplicationContext(), FireService.class);
                 stopService(intent);
             }
         });
-
-
     }
+
+    //데이터 송신
+    void sendData(String msg) {
+        msg += strDelimiter; //문자열 종료 표시가 나오면 데이터를 다 받은 것
+        try {
+            if (outputStream == null) {
+                try {
+                    outputStream = socket.getOutputStream();
+
+                } catch (IOException e) {
+                    Log.d(TAG, "체크 에러 : " + e.getMessage());
+                }
+            }
+
+            outputStream.write(msg.getBytes());//아두이노로 문자열을 전송함
+
+
+        } catch (Exception e) {
+            showToast("데이터 전송 에러가 발생했습니다.");
+            Log.d(TAG, "sendData: " + e.getMessage());
+        }
+    }
+
     void checkBluetooth() {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter(); //메소드로 어댑터 반환함
         if (bluetoothAdapter == null) {
@@ -248,6 +346,7 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
             // 다이얼로그에서 찾는 작업은 실제로 찾는 게 아님
         }
     }
+
     //장치와 연결을 시도하는 메소드
     void connectToSelectedDevice(String selectedDeviceName) {
         remoteDevice = getDeviceFromList(selectedDeviceName); // 객체를 돌려줌
@@ -269,6 +368,7 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
         }
     }
 
+
     // 데이터 수신 준비 및 처리 메소드
     void beginListenForData() {
         final Handler handler = new Handler();
@@ -283,9 +383,9 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
                     try {
                         int bytesAvailable = inputStream.available(); //수신 데이터 확인
 
-                        if (bytesAvailable > 0 ) {
+                        if (bytesAvailable > 0) {
                             //Log.d(TAG, "어베일러블하니 ");
-                            Log.d(TAG, "어베일러블 이후 바이트 어베일러블 "+bytesAvailable);
+                            Log.d(TAG, "어베일러블 이후 바이트 어베일러블 " + bytesAvailable);
 
                             byte[] packetBytes = new byte[bytesAvailable]; //가져온 값을 패킷바이트에 넣음
                             inputStream.read(packetBytes);
@@ -305,34 +405,61 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
                                         @Override
                                         public void run() {
 
-                                            Log.d(TAG, "data: "+data);
-                                            if(data.contains("flame")){
-                                                String f = data;
-                                                flameVal =  f.substring(5);
+                                            SimpleDateFormat dataFormat = new SimpleDateFormat("yyyyMMddhhmm");
+                                            Date date = new Date();
+                                            String strollTime = dataFormat.format(date);
+                                            // Log.d(TAG, "data: " + data);
 
-                                            }else if(data.contains("water")){
+                                            if (data.contains("flame")) {
+                                                String f = data;
+                                                flameVal = f.substring(5);
+
+                                            } else if (data.contains("water")) {
                                                 String w = data;
                                                 waterVal = w.substring(5);
 
-                                            }else if(data.contains("t")){
+                                            } else if (data.contains("temp")) {
                                                 String t = data;
-                                                temperatureVal = t.substring(1);
+                                                temperatureVal = t.substring(4);
 
-                                            }else if(data.contains("h")){
+                                            } else if (data.contains("humi")) {
                                                 String h = data;
-                                                humidityVal = h.substring(1);
+                                                humidityVal = h.substring(4);
 
-                                            }else if(data.contains("l")){
-                                                Log.d(TAG, "light data: "+data);
+                                            } else if (data.contains("lig")) {
+                                                //Log.d(TAG, "light data: "+data);
                                                 String l = data;
-                                                sunlightVal = l.substring(1);
+                                                sunlightVal = l.substring(3);
+
+                                            } else if (data.contains("doorin")) {
+                                                strollCount++;
+                                                // Log.d(TAG, "data: " + data);
+                                                stroll_in_date = strollTime;
+
+                                            } else if (data.contains("doorout")) {
+                                                // Log.d(TAG, "data: " + data);
+                                                stroll_out_date = strollTime;
+
                                             }
+
+                                            if (flameVal != null) {
+
+                                                if (Integer.parseInt(flameVal) > 300) {
+                                                    if (str == "0") {
+                                                        str = "1";
+                                                        windowText.setText("창문 열림");
+                                                        //sendData(str);
+                                                    }
+                                                    MediaPlayer player = MediaPlayer.create(getApplicationContext(), R.raw.siren);
+                                                    player.start();
+                                                }
+                                            }
+
+
                                         }
                                     });
                                 } else {
                                     readBuffer[readBufferPosition++] = b;
-                                    //Log.d(TAG, "run: "+readBufferPosition);
-                                    //값을 배열에 하나씩 넣음
                                 }
                             }
                         }
@@ -361,8 +488,12 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
 
     @Override
     protected void onPause() {
-        // firebase 쓰기
+        //센서 firebase 쓰기
         connectFirebase(waterVal, flameVal, temperatureVal, humidityVal, sunlightVal);
+        //in, out fireabse에 쓰기
+        connectFirebase("stroll_in_out", "in", stroll_in_date);
+        connectFirebase("stroll_in_out", "out", stroll_out_date);
+         //connectFirebase("stroll_in_out", "stroll", String.valueOf(strollCount));
         super.onPause();
     }
 
@@ -395,9 +526,9 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
 
         }
     }
-    //파이어베이스 조금 이해하기 :) ㅋ
+
     //블루투스로 받은값이 매개변수로 들어갑니다.
-    public void connectFirebase(String waterVal,String flameVal,String temperatureVal, String humidityVal, String sunlightVal){
+    public void connectFirebase(String waterVal, String flameVal, String temperatureVal, String humidityVal, String sunlightVal) {
         //fireabse 실시간 db관리 객체를 얻습니다.
         mDatabase = FirebaseDatabase.getInstance();
 
@@ -414,9 +545,15 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
         mReference.child("sunlight").setValue(sunlightVal);
     }
 
-    @SuppressLint("MissingPermission")
+    // stroll in & out 메소드
+    public void connectFirebase(String node, String child_node, String val) {
+        mDatabase = FirebaseDatabase.getInstance();
+        mReference = mDatabase.getReference(node);//stroll_in_out
+        mReference.child(child_node).setValue(val);// 들어가는 child node 이름에 따라 값 저장됨
+    }
+
     public Location get_Location() {
-        locManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        locManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         try {
             isGPSEnabled = locManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
             isNetworkEnabled = locManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
@@ -428,8 +565,15 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
             showToast("GSP 또는 네트워크가 연결되지 않음");
         } else {
             this.isGetLoc = true;
-            //여기부터 그냥 통과됨
             if (isNetworkEnabled) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION,
+                                android.Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
+                        //requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1); //위치권한 탐색 허용 관련 내용
+                    }
+                    return null;
+                }
                 locManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME_TO_UPDATE, MIN_DISTANCE_TO_UPDATE, locationListener);
                 Log.d(TAG, "network enabled ");
             } else {
@@ -474,7 +618,7 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
         public void onLocationChanged(@NonNull Location location) {
             //날씨 호출 메소드
             get_weather(location.getLatitude(), location.getLongitude());
-            Log.d(TAG, "onLocationChanged:location:  "+location);
+            Log.d(TAG, "onLocationChanged:location:  " + location);
         }
 
         @Override
@@ -582,5 +726,48 @@ public class MainActivity extends AppCompatActivity implements AutoPermissionsLi
         Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
     }
 
+    @Override
+    public void onClick(View v) {
+        //진짜 데이터 보내는 거
+        if (str == "0") {
+            str = "1";
+            windowText.setText("환기 켜기");
+            //  showToast(str);
 
+        } else if (str == "1") {
+            str = "0";
+            windowText.setText("환기 끄기");
+            //  showToast(str);
+
+        }
+        sendData(str);
+    }
+
+    //firebase 테스트 (stroll count 호출시 사용 )
+    private void getCounts(DatabaseReference reference) {
+        reference.runTransaction(new Transaction.Handler() {
+            @NonNull
+            @Override
+            public Transaction.Result doTransaction(@NonNull MutableData currentData) {
+                String strollCount = currentData.getValue(String.class);
+                if (strollCount == null) {
+                    return Transaction.success(currentData);
+                }
+                if (Integer.parseInt(strollCount) >= 0) {
+                    int counts = Integer.parseInt(strollCount);
+                    Log.d(TAG, "doTransaction() returned: " + counts);
+                    //테스트
+                    counts++;
+                    strollCount = String.valueOf(counts);
+                }
+                currentData.setValue(strollCount);
+                return Transaction.success(currentData);
+            }
+
+            @Override
+            public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot currentData) {
+                //Log.d(TAG, "onComplete: " + error);
+            }
+        });
+    }
 }

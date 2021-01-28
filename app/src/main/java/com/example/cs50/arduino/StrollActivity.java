@@ -31,7 +31,7 @@ public class StrollActivity extends AppCompatActivity {
     private static final String TAG = "stroll";
 
     //ui
-    Button btn_save,off;
+    Button btn_save, off;
     TimePicker timePicker;
     int hour, min;
     TextView stroll_time;
@@ -45,12 +45,16 @@ public class StrollActivity extends AppCompatActivity {
     AlarmManager alarmManager;
     GregorianCalendar mCalendar;
 
+    //산책횟수 체크
+    String inTime, outTime,strollCount;
+    TextView tvStroll_count;
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.stroll_notify);
-
 
         mDatabase = FirebaseDatabase.getInstance();
         mReference = mDatabase.getReference("strollTime");
@@ -64,22 +68,95 @@ public class StrollActivity extends AppCompatActivity {
         btn_save = findViewById(R.id.btn_save);
         stroll_time = findViewById(R.id.stroll_time);
         off = findViewById(R.id.off);
-        stroll_time.setText("산책알림 설정 시간 : 설정 안됨");
+        tvStroll_count = findViewById(R.id.tvStroll_count);
 
         //firebase에서 읽어오기
+        //산책 시간 db
         ValueEventListener timeListener = new ValueEventListener() {
+
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-               String value = dataSnapshot.getValue(String.class);
-               stroll_time.setText("산책알림 설정 시간 : "+value);
+                String value = dataSnapshot.getValue(String.class);
+                stroll_time.setText("산책알림 설정 시간 : " + value);
+            }
+
+            //데이터 읽기 취소시 호출
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "onCancelled: ", databaseError.toException());
+            }
+        };
+        mReference.addValueEventListener(timeListener);
+
+        //산책 횟수 db - stroll
+        mReference = mDatabase.getReference("stroll_in_out").child("stroll");
+        ValueEventListener countListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                 strollCount = dataSnapshot.getValue(String.class);
+                tvStroll_count.setText("산책횟수 : " + strollCount);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "onCancelled: ",databaseError.toException() );
+                Log.w(TAG, "onCancelled: ", databaseError.toException());
             }
         };
-        mReference.addValueEventListener(timeListener);
+        mReference.addValueEventListener(countListener);
+        //mReference.addListenerForSingleValueEvent(countListener);
+
+/*
+        //산책 횟수 테스트2 - counts
+        mReference = mDatabase.getReference("stroll_in_out").child("counts");
+        mReference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                strollCount = (String) dataSnapshot.getValue();
+                */
+/*int count = Integer.parseInt(strollCount);
+                count++;
+                strollCount = String.valueOf(count);
+                dataSnapshot.getRef().setValue(strollCount);*//*
+
+               tvStroll_count.setText("산책횟수 : " + strollCount);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "onCancelled: ", databaseError.toException());
+            }
+        });
+*/
+
+        // inOut 시간읽어오기
+        mReference = mDatabase.getReference("stroll_in_out").child("in");
+        ValueEventListener strollIn = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                inTime = dataSnapshot.getValue(String.class);
+                Log.d("테스트", inTime);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "onCancelled: ", databaseError.toException());
+            }
+        };
+        mReference.addValueEventListener(strollIn);
+
+        mReference = mDatabase.getReference("stroll_in_out").child("out");
+        ValueEventListener strollOut = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                outTime = dataSnapshot.getValue(String.class);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "onCancelled: ", databaseError.toException());
+            }
+        };
+        mReference.addValueEventListener(strollOut);
 
         //시간 가져오기
         timePicker = findViewById(R.id.time_picker);
@@ -106,8 +183,9 @@ public class StrollActivity extends AppCompatActivity {
 
     //firebase db에 시간 넣기
     private void writeTime(String time){
+        mReference = mDatabase.getReference("strollTime");
         mReference.setValue(time);
-        Log.d(TAG, "firebase db write time : "+ time );
+        Log.d(TAG, "firebase db write time : "+ time);
 
     }
 
